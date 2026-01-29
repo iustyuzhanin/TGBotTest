@@ -1,11 +1,13 @@
 [phases.setup]
-nixPkgs = ["dotnet-sdk_8", "icu", "zlib", "openssl"]
+nixPkgs = ["dotnet-sdk_8"]
 
-[phases.install]
-cmds = ["dotnet restore"]
-
+# Сначала восстановите, затем соберите конкретный проект
 [phases.build]
-cmds = ["dotnet publish -c Release -o /app"]
+cmds = [
+  "dotnet restore TGBotTest.csproj",
+  "dotnet build TGBotTest.csproj -c Release",
+  "dotnet publish TGBotTest.csproj -c Release -o /app"
+]
 
 [start]
 cmd = "dotnet /app/TGBotTest.dll"
