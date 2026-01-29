@@ -30,7 +30,7 @@ namespace TGBotTest
             try
             {
                 // Проверяем подключение к Telegram API
-                var me = await botClient.GetMe();
+                var me = await botClient.GetMeAsync();
                 Console.WriteLine($"✅ Бот @{me.Username} подключен к Telegram");
                 Console.WriteLine($"🆔 ID бота: {me.Id}");
                 Console.WriteLine($"⏰ Время запуска: {DateTime.Now}");
@@ -45,7 +45,7 @@ namespace TGBotTest
             var receiverOptions = new ReceiverOptions
             {
                 AllowedUpdates = Array.Empty<UpdateType>(), // Получаем все типы сообщений
-                DropPendingUpdates = true, // Игнорируем старые сообщения при запуске
+                ThrowPendingUpdates = true, // Игнорируем старые сообщения при запуске
             };
 
             var updateHandler = new DefaultUpdateHandler(
@@ -95,7 +95,7 @@ namespace TGBotTest
                 string response = answers[random.Next(answers.Length)];
 
                 // Отправляем ответ
-                await botClient.SendMessage(
+                await botClient.SendTextMessageAsync(
                     chatId: chatId,
                     text: $"{response}",
                     cancellationToken: cancellationToken
