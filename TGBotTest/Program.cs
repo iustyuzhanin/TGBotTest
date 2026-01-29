@@ -90,18 +90,89 @@ namespace TGBotTest
                 // Логируем в консоль Railway
                 Console.WriteLine($"[{DateTime.Now:HH:mm:ss}] 👤 {userName} ({userId}): {messageText}");
 
-                // Генерируем случайный ответ Да/Нет
-                string[] answers = { "✅ Да", "❌ Нет", "🤔 Возможно", "🎯 Конечно!", "🙅‍♂️ Вряд ли" };
+                // --- ОБРАБОТКА КОМАНД ---
+
+                // Команда /start
+                if (messageText.Equals("/start", StringComparison.OrdinalIgnoreCase))
+                {
+                    var welcomeText = $"👋 Привет, {userName}!\n\n" +
+                                     "Я телеграм-бот, который отвечает на вопросы.\n" +
+                                     "Просто напиши мне что-нибудь, и я отвечу:\n";
+
+                    await botClient.SendTextMessageAsync(
+                        chatId: chatId,
+                        text: welcomeText,
+                        cancellationToken: cancellationToken
+                    );
+
+                    Console.WriteLine($"[{DateTime.Now:HH:mm:ss}] 🤖 Отправлено приветственное сообщение");
+                    return; // Завершаем обработку
+                }
+
+                // Команда /help
+                if (messageText.Equals("/help", StringComparison.OrdinalIgnoreCase))
+                {
+                    var helpText = "📋 Доступные команды:\n\n" +
+                                  "/start - Начать работу с ботом\n" +
+                                  "/help - Получить справку\n" +
+                                  "/info - Информация о боте\n\n" +
+                                  "Просто напиши любое сообщение, и я отвечу!";
+
+                    await botClient.SendTextMessageAsync(
+                        chatId: chatId,
+                        text: helpText,
+                        cancellationToken: cancellationToken
+                    );
+
+                    Console.WriteLine($"[{DateTime.Now:HH:mm:ss}] 🤖 Отправлена справка");
+                    return;
+                }
+
+                // Команда /info
+                if (messageText.Equals("/info", StringComparison.OrdinalIgnoreCase))
+                {
+                    var infoText = "ℹ️ Информация о боте:\n\n" +
+                                  "🤖 Тип: Бот ответов\n" +
+                                  "📍 Хостинг: Railway.app\n" +
+                                  "⏰ Режим: 24/7\n" +
+                                  "📅 Создан: 2024\n" +
+                                  "💻 Технологии: .NET 8, Telegram.Bot API";
+
+                    await botClient.SendTextMessageAsync(
+                        chatId: chatId,
+                        text: infoText,
+                        cancellationToken: cancellationToken
+                    );
+
+                    Console.WriteLine($"[{DateTime.Now:HH:mm:ss}] 🤖 Отправлена информация");
+                    return;
+                }
+
+                // --- ОБЫЧНЫЙ ОТВЕТ (не команда) ---
+
+                // Если это не команда, отвечаем случайным образом
+                string[] answers = {
+                "✅ Да",
+                "❌ Нет",
+                "🤔 Возможно",
+                "🎯 Конечно!",
+                "🙅‍♂️ Вряд ли",
+                "🔮 Спроси позже",
+                "⚡ Определенно да!",
+                "🚫 Точно нет!",
+                "🤷‍♀️ Не уверен...",
+                "🎲 Сложный вопрос"
+            };
+
                 string response = answers[random.Next(answers.Length)];
 
-                // Отправляем ответ
                 await botClient.SendTextMessageAsync(
                     chatId: chatId,
-                    text: $"{response}",
+                    text: response,
                     cancellationToken: cancellationToken
                 );
 
-                Console.WriteLine($"[{DateTime.Now:HH:mm:ss}] 🤖 Бот ответил: {response}");
+                Console.WriteLine($"[{DateTime.Now:HH:mm:ss}] 🤖 Ответил: {response}");
             }
             catch (Exception ex)
             {
