@@ -5,6 +5,11 @@
     <TargetFramework>net8.0</TargetFramework>
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>enable</Nullable>
+	  
+	<UseAppHost>false</UseAppHost>
+	<PublishSingleFile>false</PublishSingleFile>
+	<SelfContained>false</SelfContained>
+
   </PropertyGroup>
 
   <ItemGroup>
