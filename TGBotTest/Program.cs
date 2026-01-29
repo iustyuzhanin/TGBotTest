@@ -105,6 +105,18 @@ namespace TGBotTest
                         cancellationToken: cancellationToken
                     );
 
+                    var helpText = "📋 Доступные команды:\n\n" +
+                                   "/start - Начать работу с ботом\n" +
+                                   "/help - Получить справку\n" +
+                                   "/info - Информация о боте\n\n" +
+                                   "Просто напиши любое сообщение, и я отвечу!";
+
+                    await botClient.SendTextMessageAsync(
+                        chatId: chatId,
+                        text: helpText,
+                        cancellationToken: cancellationToken
+                    );
+
                     Console.WriteLine($"[{DateTime.Now:HH:mm:ss}] 🤖 Отправлено приветственное сообщение");
                     return; // Завершаем обработку
                 }
