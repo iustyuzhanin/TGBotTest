@@ -3,9 +3,9 @@ nixPkgs = ["dotnet-sdk_8"]
 
 [phases.build]
 cmds = [
-  "dotnet restore",
-  "dotnet build -c Release", 
-  "dotnet publish -c Release -o /app"
+  "dotnet restore TGBotTest.sln",
+  "dotnet build TGBotTest/TGBotTest.csproj -c Release",
+  "dotnet publish TGBotTest/TGBotTest.csproj -c Release -o /app"
 ]
 
 [start]
