@@ -1,12 +1,11 @@
 [phases.setup]
 nixPkgs = ["dotnet-sdk_8"]
 
-# Сначала восстановите, затем соберите конкретный проект
 [phases.build]
 cmds = [
-  "dotnet restore TGBotTest.csproj",
-  "dotnet build TGBotTest.csproj -c Release",
-  "dotnet publish TGBotTest.csproj -c Release -o /app"
+  "dotnet restore",
+  "dotnet build -c Release", 
+  "dotnet publish -c Release -o /app"
 ]
 
 [start]
