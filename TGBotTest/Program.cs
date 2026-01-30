@@ -1,5 +1,4 @@
-﻿using System.Net.Http;
-using System.Text;
+﻿using System.Text;
 using System.Text.Json;
 using Telegram.Bot;
 using Telegram.Bot.Polling;
@@ -13,24 +12,46 @@ namespace TGBotTest
         private static Random random = new Random();
         private static readonly HttpClient httpClient = new HttpClient();
 
+        // Объявляем как nullable
+        private static string? _botToken;
+        private static string? _yandexApiKey;
+        private static string? _yandexFolderId;
+
+        // Свойства с ленивой инициализацией
+        private static string BotToken =>
+            _botToken ??= GetEnvironmentVariableOrThrow("BOT_TOKEN");
+
+        private static string YandexApiKey =>
+            _yandexApiKey ??= GetEnvironmentVariable("YANDEX_API_KEY");
+
+        private static string YandexFolderId =>
+            _yandexFolderId ??= GetEnvironmentVariable("YANDEX_FOLDER_ID");
+
+        private static string GetEnvironmentVariable(string name)
+        {
+            return Environment.GetEnvironmentVariable(name) ?? string.Empty;
+        }
+
+        private static string GetEnvironmentVariableOrThrow(string name)
+        {
+            var value = Environment.GetEnvironmentVariable(name);
+            if (string.IsNullOrEmpty(value))
+                throw new InvalidOperationException($"{name} не установлен в переменных окружения");
+            return value;
+        }
+
         static async Task Main(string[] args)
         {
             Console.WriteLine("=== Запуск Telegram бота ===");
 
-            // Получаем токен из переменных окружения Railway
-            var botToken = Environment.GetEnvironmentVariable("BOT_TOKEN");
-            //var botToken = "8410244251:AAGnQ1TI8SB5PYyvfDDFp3FtR4j2ov1VN_o";
-            var yandexApiKey = Environment.GetEnvironmentVariable("YANDEX_API_KEY");
-            var yandexFolderId = Environment.GetEnvironmentVariable("YANDEX_FOLDER_ID");
-
-            if (string.IsNullOrEmpty(botToken))
+            if (string.IsNullOrEmpty(BotToken))
             {
                 Console.WriteLine("❌ ОШИБКА: Переменная BOT_TOKEN не установлена!");
                 Console.WriteLine("ℹ️ На Railway добавьте переменную окружения BOT_TOKEN");
                 return;
             }
 
-            var botClient = new TelegramBotClient(botToken);
+            var botClient = new TelegramBotClient(BotToken);
             using var cts = new CancellationTokenSource();
 
             try
@@ -59,59 +80,10 @@ namespace TGBotTest
                 HandlePollingErrorAsync
             );
 
-            // Запускаем прослушивание сообщений (новый синтаксис)
-            //botClient.StartReceiving(
-            //    updateHandler: updateHandler,
-            //    receiverOptions: receiverOptions,
-            //    cancellationToken: cts.Token
-            //);
-
+            //Запускаем прослушивание сообщений
             botClient.StartReceiving(
-                updateHandler: async (client, update, token) =>
-                {
-                    if (update.Message?.Text is string text)
-                    {
-                        var chatId = update.Message.Chat.Id;
-                        var name = update.Message.From?.FirstName ?? "друг";
-
-                        Console.WriteLine($"{name}: {text}");
-
-                        // Команда /start
-                        if (text == "/start")
-                        {
-                            await client.SendTextMessageAsync(
-                                chatId: chatId,
-                                text: $"Привет, {name}! 👋\nЯ бот с YandexGPT. Задавай вопросы!",
-                                cancellationToken: token
-                            );
-                            return;
-                        }
-
-                        string response;
-
-                        // Если есть ключи Yandex, используем ИИ
-                        if (!string.IsNullOrEmpty(yandexApiKey) && !string.IsNullOrEmpty(yandexFolderId))
-                        {
-                            response = await GetYandexGPTResponse(text, yandexApiKey, yandexFolderId);
-                        }
-                        else
-                        {
-                            response = GetRandomResponse();
-                        }
-
-                        await client.SendTextMessageAsync(
-                            chatId: chatId,
-                            text: response,
-                            cancellationToken: token
-                        );
-                    }
-                },
-                pollingErrorHandler: (client, error, token) =>
-                {
-                    Console.WriteLine($"Error: {error.Message}");
-                    return Task.CompletedTask;
-                },
-                receiverOptions: new ReceiverOptions(),
+                updateHandler: updateHandler,
+                receiverOptions: receiverOptions,
                 cancellationToken: cts.Token
             );
 
@@ -126,7 +98,13 @@ namespace TGBotTest
             Console.ReadKey();
         }
 
-        // Обработчик входящих сообщений
+        /// <summary>
+        /// Обработчик входящих сообщений
+        /// </summary>
+        /// <param name="botClient"></param>
+        /// <param name="update"></param>
+        /// <param name="cancellationToken"></param>
+        /// <returns></returns>
         static async Task HandleUpdateAsync(
             ITelegramBotClient botClient,
             Update update,
@@ -151,7 +129,7 @@ namespace TGBotTest
                 if (messageText.Equals("/start", StringComparison.OrdinalIgnoreCase))
                 {
                     var welcomeText = $"👋 Привет, {userName}!\n\n" +
-                                     "Я телеграм-бот, который отвечает на вопросы.\n" +
+                                     "Я телеграм-бот, который отвечает на любые вопросы.\n" +
                                      "Просто напиши мне что-нибудь, и я отвечу:\n";
 
                     await botClient.SendTextMessageAsync(
@@ -200,9 +178,10 @@ namespace TGBotTest
                 {
                     var infoText = "ℹ️ Информация о боте:\n\n" +
                                   "🤖 Тип: Бот ответов\n" +
+                                  "🧠 ИИ: Yandex Alice AI\n" +
                                   "📍 Хостинг: Railway.app\n" +
                                   "⏰ Режим: 24/7\n" +
-                                  "📅 Создан: 2024\n" +
+                                  "📅 Создан: 2026\n" +
                                   "💻 Технологии: .NET 8, Telegram.Bot API";
 
                     await botClient.SendTextMessageAsync(
@@ -217,20 +196,18 @@ namespace TGBotTest
 
                 // --- ОБЫЧНЫЙ ОТВЕТ (не команда) ---
 
-                // Если это не команда, отвечаем случайным образом
-                string[] answers = {
-                "✅ Да",
-                "❌ Нет",
-                "🤔 Возможно",
-                "🎯 Конечно!",
-                "🙅‍♂️ Вряд ли",
-                "🔮 Спроси позже",
-                "⚡ Определенно да!",
-                "🚫 Точно нет!",
-                "🤷‍♀️ Не уверен...",
-            };
+                // Если это не команда, отвечает ИИ
+                string response;
 
-                string response = answers[random.Next(answers.Length)];
+                // Если есть ключи Yandex, используем ИИ
+                if (!string.IsNullOrEmpty(YandexApiKey) && !string.IsNullOrEmpty(YandexFolderId))
+                {
+                    response = await GetYandexGPTResponse(messageText, YandexApiKey, YandexFolderId);
+                }
+                else
+                {
+                    response = GetRandomResponse();
+                }
 
                 await botClient.SendTextMessageAsync(
                     chatId: chatId,
@@ -262,19 +239,19 @@ namespace TGBotTest
             {
                 var request = new
                 {
-                    modelUri = $"gpt://{folderId}/yandexgpt-lite",
+                    modelUri = $"gpt://{folderId}/aliceai-llm/latest",
                     completionOptions = new
                     {
                         stream = false,
                         temperature = 0.6,
-                        maxTokens = 200
+                        maxTokens = 200,
                     },
                     messages = new[]
                     {
                         new
                         {
                             role = "system",
-                            text = "Ты дружелюбный телеграм-бот. Отвечай кратко (1-2 предложения). Будь позитивным и иногда используй эмодзи. Если не знаешь ответа, скажи что-то ободряющее."
+                            text = "Ты дружелюбный телеграм-бот. Отвечай кратко (2-4 предложения), если попросят развернутее, то пиши развернуто. Будь позитивным и иногда используй эмодзи. Если не знаешь ответа, скажи что-то ободряющее."
                         },
                         new
                         {
